@@ -28,6 +28,20 @@ const utils = {
     main.innerHTML = content;
     document.querySelector(".btn-container").innerHTML = btn;
   },
+
+  //   permet de gérer les événements sur les boutons de la page
+  handleEventMinutes: function () {
+    document.querySelectorAll('input[type="number"]').forEach((input) => {
+      input.addEventListener("input", (e) => {
+        exerciceArray.map((exercice) => {
+          if (exercice.pic == e.target.id) {
+            exercice.min = e.target.value;
+            console.log(exerciceArray);
+          }
+        });
+      });
+    });
+  },
 };
 
 // Page est un objet qui contient des méthodes qui permettent de générer le contenu de la page en fonction de l'état de l'application (lobby, routine, finish) et de l'interaction de l'utilisateur (click sur le bouton start, reboot, etc.)
@@ -43,6 +57,8 @@ const page = {
                 <span>min</span>
                </div>
                <img src="img/${exercice.pic}.png" alt="exercice ${exercice.pic}">
+               <i class="fas fa-arrow-alt-circle-left arrow" data-pic=${exercice.pic} ></i>
+               <i class="fas fa-times-circle deleteBtn" data-pic=${exercice.pic} ></i>
             </li>        
         `
       )
@@ -52,6 +68,7 @@ const page = {
       `<ul>${mapArray}</ul>`,
       "<button id='start'>Commencer<i class='far fa-play-circle'></i></button>"
     );
+    utils.handleEventMinutes();
   },
   routine: function () {
     utils.pageContent(
