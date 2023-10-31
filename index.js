@@ -1,7 +1,6 @@
 const main = document.querySelector("main");
 
-// Exercice est un tableau d'objets qui contient les informations de chaque exercice (image et durée en minutes)
-let exerciceArray = [
+const basicArray = [
   { pic: 0, min: 1 },
   { pic: 1, min: 1 },
   { pic: 2, min: 1 },
@@ -13,6 +12,18 @@ let exerciceArray = [
   { pic: 8, min: 1 },
   { pic: 9, min: 1 },
 ];
+// Exercice est un tableau d'objets qui contient les informations de chaque exercice (image et durée en minutes)
+let exerciceArray = [];
+
+// get stored exerciceArray
+
+(() => {
+  if (localStorage.exercices) {
+    exerciceArray = JSON.parse(localStorage.exercices);
+  } else {
+    exerciceArray = basicArray;
+  }
+})();
 
 // Exercice est une classe qui permet de créer des objets qui contiennent les informations de chaque exercice (image et durée en minutes)
 class Exercice {
@@ -35,12 +46,58 @@ const utils = {
       input.addEventListener("input", (e) => {
         exerciceArray.map((exercice) => {
           if (exercice.pic == e.target.id) {
-            exercice.min = e.target.value;
-            console.log(exerciceArray);
+            exercice.min = parseInt(e.target.value);
+            this.store();
           }
         });
       });
     });
+  },
+
+  handleEventArrow: function () {
+    document.querySelectorAll(".arrow").forEach((arrow) => {
+      arrow.addEventListener("click", (e) => {
+        let position = 0;
+        exerciceArray.map((exercice) => {
+          if (exercice.pic == e.target.dataset.pic && position !== 0) {
+            [exerciceArray[position], exerciceArray[position - 1]] = [
+              exerciceArray[position - 1],
+              exerciceArray[position],
+            ];
+            page.lobby();
+            this.store();
+          } else {
+            position++;
+            console.log(position);
+          }
+        });
+      });
+    });
+  },
+  deleteItem: function () {
+    document.querySelectorAll(".deleteBtn").forEach((deleteBtn) => {
+      deleteBtn.addEventListener("click", (e) => {
+        let newArray = [];
+        exerciceArray.map((exercice) => {
+          if (exercice.pic != e.target.dataset.pic) {
+            newArray.push(exercice);
+          }
+        });
+        exerciceArray = newArray;
+        page.lobby();
+        this.store();
+        console.log(exerciceArray);
+      });
+    });
+  },
+
+  reboot: function () {
+    exerciceArray = basicArray;
+    page.lobby();
+    this.store();
+  },
+  store: function () {
+    localStorage.exercices = JSON.stringify(exerciceArray);
   },
 };
 
@@ -69,6 +126,9 @@ const page = {
       "<button id='start'>Commencer<i class='far fa-play-circle'></i></button>"
     );
     utils.handleEventMinutes();
+    utils.handleEventArrow();
+    utils.deleteItem();
+    reboot.addEventListener("click", () => utils.reboot());
   },
   routine: function () {
     utils.pageContent(
