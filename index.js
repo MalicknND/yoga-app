@@ -1,5 +1,4 @@
 const main = document.querySelector("main");
-
 const basicArray = [
   { pic: 0, min: 1 },
   { pic: 1, min: 1 },
@@ -12,11 +11,9 @@ const basicArray = [
   { pic: 8, min: 1 },
   { pic: 9, min: 1 },
 ];
-// Exercice est un tableau d'objets qui contient les informations de chaque exercice (image et durée en minutes)
 let exerciceArray = [];
 
-// get stored exerciceArray
-
+// Get stored exercices array
 (() => {
   if (localStorage.exercices) {
     exerciceArray = JSON.parse(localStorage.exercices);
@@ -25,11 +22,49 @@ let exerciceArray = [];
   }
 })();
 
-// Exercice est une classe qui permet de créer des objets qui contiennent les informations de chaque exercice (image et durée en minutes)
 class Exercice {
-  constructor(pic, min) {
-    this.pic = pic;
-    this.min = min;
+  constructor() {
+    this.index = 0;
+    this.minutes = exerciceArray[this.index].min;
+    this.seconds = 0;
+  }
+
+  updateCountdown() {
+    this.seconds = this.seconds < 10 ? "0" + this.seconds : this.seconds;
+
+    setTimeout(() => {
+      if (this.minutes === 0 && this.seconds === "00") {
+        this.index++;
+        this.ring();
+        if (this.index < exerciceArray.length) {
+          this.minutes = exerciceArray[this.index].min;
+          this.seconds = 0;
+          this.updateCountdown();
+        } else {
+          return page.finish();
+        }
+      } else if (this.seconds === "00") {
+        this.minutes--;
+        this.seconds = 59;
+        this.updateCountdown();
+      } else {
+        this.seconds--;
+        this.updateCountdown();
+      }
+    }, 1000);
+
+    return (main.innerHTML = `
+      <div class="exercice-container">
+        <p>${this.minutes}:${this.seconds}</p>
+        <img src="./img/${exerciceArray[this.index].pic}.png" />
+        <div>${this.index + 1}/${exerciceArray.length}</div>
+      </div>`);
+  }
+
+  ring() {
+    const audio = new Audio();
+    audio.src = "ring.mp3";
+    audio.play();
   }
 }
 
@@ -40,13 +75,12 @@ const utils = {
     document.querySelector(".btn-container").innerHTML = btn;
   },
 
-  //   permet de gérer les événements sur les boutons de la page
   handleEventMinutes: function () {
     document.querySelectorAll('input[type="number"]').forEach((input) => {
       input.addEventListener("input", (e) => {
-        exerciceArray.map((exercice) => {
-          if (exercice.pic == e.target.id) {
-            exercice.min = parseInt(e.target.value);
+        exerciceArray.map((exo) => {
+          if (exo.pic == e.target.id) {
+            exo.min = parseInt(e.target.value);
             this.store();
           }
         });
@@ -58,8 +92,8 @@ const utils = {
     document.querySelectorAll(".arrow").forEach((arrow) => {
       arrow.addEventListener("click", (e) => {
         let position = 0;
-        exerciceArray.map((exercice) => {
-          if (exercice.pic == e.target.dataset.pic && position !== 0) {
+        exerciceArray.map((exo) => {
+          if (exo.pic == e.target.dataset.pic && position !== 0) {
             [exerciceArray[position], exerciceArray[position - 1]] = [
               exerciceArray[position - 1],
               exerciceArray[position],
@@ -68,25 +102,24 @@ const utils = {
             this.store();
           } else {
             position++;
-            console.log(position);
           }
         });
       });
     });
   },
+
   deleteItem: function () {
-    document.querySelectorAll(".deleteBtn").forEach((deleteBtn) => {
-      deleteBtn.addEventListener("click", (e) => {
-        let newArray = [];
-        exerciceArray.map((exercice) => {
-          if (exercice.pic != e.target.dataset.pic) {
-            newArray.push(exercice);
+    document.querySelectorAll(".deleteBtn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        let newArr = [];
+        exerciceArray.map((exo) => {
+          if (exo.pic != e.target.dataset.pic) {
+            newArr.push(exo);
           }
         });
-        exerciceArray = newArray;
+        exerciceArray = newArr;
         page.lobby();
         this.store();
-        console.log(exerciceArray);
       });
     });
   },
@@ -96,54 +129,57 @@ const utils = {
     page.lobby();
     this.store();
   },
+
   store: function () {
     localStorage.exercices = JSON.stringify(exerciceArray);
   },
 };
 
-// Page est un objet qui contient des méthodes qui permettent de générer le contenu de la page en fonction de l'état de l'application (lobby, routine, finish) et de l'interaction de l'utilisateur (click sur le bouton start, reboot, etc.)
 const page = {
   lobby: function () {
     let mapArray = exerciceArray
       .map(
-        (exercice) =>
+        (exo) =>
           `
-            <li>
-               <div class="card-header">
-                <input type="number" id=${exercice.pic} value=${exercice.min} min="1" max="10">
-                <span>min</span>
-               </div>
-               <img src="img/${exercice.pic}.png" alt="exercice ${exercice.pic}">
-               <i class="fas fa-arrow-alt-circle-left arrow" data-pic=${exercice.pic} ></i>
-               <i class="fas fa-times-circle deleteBtn" data-pic=${exercice.pic} ></i>
-            </li>        
-        `
+        <li>
+          <div class="card-header">
+            <input type="number" id=${exo.pic} min="1" max="10" value=${exo.min}>
+            <span>min</span>
+          </div>
+          <img src="./img/${exo.pic}.png" />
+          <i class="fas fa-arrow-alt-circle-left arrow" data-pic=${exo.pic}></i>
+          <i class="fas fa-times-circle deleteBtn" data-pic=${exo.pic}></i>
+        </li>
+      `
       )
       .join("");
+
     utils.pageContent(
-      "Paramétage <i id='reboot' class='fas fa-undo'></i>",
-      `<ul>${mapArray}</ul>`,
+      "Paramétrage <i id='reboot' class='fas fa-undo'></i>",
+      "<ul>" + mapArray + "</ul>",
       "<button id='start'>Commencer<i class='far fa-play-circle'></i></button>"
     );
     utils.handleEventMinutes();
     utils.handleEventArrow();
     utils.deleteItem();
     reboot.addEventListener("click", () => utils.reboot());
+    start.addEventListener("click", () => this.routine());
   },
+
   routine: function () {
-    utils.pageContent(
-      "Routine <i id='reboot' class='fas fa-undo'></i>",
-      "Exercice avec chrono",
-      null
-    );
+    const exercice = new Exercice();
+
+    utils.pageContent("Routine", exercice.updateCountdown(), null);
   },
 
   finish: function () {
     utils.pageContent(
-      "C'est fini !",
+      "C'est terminé !",
       "<button id='start'>Recommencer</button>",
-      "<button id='reboot' class='btn-reboot'>Réinitialiser<i class='fas fa-times-circle'></i></button>"
+      "<button id='reboot' class='btn-reboot'>Réinintialiser <i class='fas fa-times-circle'></i></button>"
     );
+    start.addEventListener("click", () => this.routine());
+    reboot.addEventListener("click", () => utils.reboot());
   },
 };
 
